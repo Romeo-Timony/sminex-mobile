@@ -4,9 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       jira_key:
-        description: 'Jira Key to promote (e.g., KAN-4). Leave empty to promote all pending review.'
-        required: false
-        default: ''
+        description: 'Jira Key to promote (for example, KAN-4).'
+        required: true
       verify:
         description: 'Run verification tests (pytest) before promotion'
         type: boolean
@@ -16,7 +15,8 @@ on:
 jobs:
   promote:
     name: Promote reviewed tests
-    runs-on: ubuntu-latest
+    # UI/E2E checks require the installed app and an Android emulator/device.
+    runs-on: [self-hosted, windows]
     permissions:
       contents: write
 
@@ -35,11 +35,23 @@ jobs:
 
       - name: Install Appium Server
         if: ${{ github.event.inputs.verify == 'true' }}
+        shell: pwsh
         run: |
           npm install -g appium
           appium -v
           # Запуск в фоновом режиме
-          appium --port 4723 &
+          Start-Process appium -ArgumentList '--port', '4723' -WindowStyle Hidden
+
+      - name: Check Android device
+        if: ${{ github.event.inputs.verify == 'true' }}
+        shell: pwsh
+        run: |
+          if (-not (Get-Command adb -ErrorAction SilentlyContinue)) {
+            throw 'Android platform-tools (adb) are not available on this runner.'
+          }
+          if (-not (adb devices | Select-String "\tdevice$")) {
+            throw 'No Android emulator or device is connected to this runner.'
+          }
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -56,26 +68,30 @@ jobs:
         env:
           QASE_API_TOKEN: ${{ secrets.QASE_API_TOKEN }}
           QASE_PROJECT_CODE: "ROMEO"
+          QASE_FIELD_AUTOMATION_COVERAGE: "1"
+          QASE_FIELD_AUTOMATION_TYPE: "2"
+          QASE_FIELD_AUTOMATION_CODE_PATH: "3"
+          QASE_FIELD_AUTOMATION_TEST_ID: "4"
+          QASE_FIELD_AUTOMATION_NOTE: "5"
+          TEST_PHONE: ${{ secrets.TEST_PHONE }}
+          DEBUG_OTP_ENABLED: "true"
+        shell: pwsh
         run: |
-          CMD="python promote_review_tests.py --apply"
-          if [ "${{ github.event.inputs.verify }}" = "true" ]; then
-            CMD="$CMD --verify"
-          fi
-          if [ -n "${{ github.event.inputs.jira_key }}" ]; then
-            CMD="$CMD --jira-key ${{ github.event.inputs.jira_key }}"
-          fi
-          echo "Executing: $CMD"
-          eval $CMD
+          $arguments = @('tools/promote_review_tests.py', '${{ inputs.jira_key }}', '--apply')
+          if ('${{ inputs.verify }}' -eq 'true') {
+            $arguments += '--verify'
+          }
+          python @arguments
 
       - name: Commit and Push Promoted Tests
+        shell: pwsh
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add tests/
-          git status
-          if ! git diff-index --quiet HEAD; then
-            git commit -m "chore: promote approved tests for ${{ github.event.inputs.jira_key || 'all keys' }}"
-            git push origin HEAD:${{ github.ref_name }}
-          else
-            echo "No changes to commit."
-          fi
+          if (git diff --cached --quiet) {
+            Write-Host "No changes to commit."
+            exit 0
+          }
+          git commit -m "chore: promote approved tests for ${{ inputs.jira_key }}"
+          git push origin HEAD:${{ github.ref_name }}
