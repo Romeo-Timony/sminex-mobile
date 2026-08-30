@@ -6,88 +6,27 @@ services:
     container_name: n8n-dev-instance
     ports:
       - "5678:5678"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - N8N_HOST=localhost
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
-      - WEBHOOK_URL=https://stylish-mary-bluebelled.ngrok-free.dev/
-      - N8N_WEBHOOK_URL=https://stylish-mary-bluebelled.ngrok-free.dev/
-      - N8N_EDITOR_BASE_URL=https://stylish-mary-bluebelled.ngrok-free.dev/
       - GENERIC_TIMEZONE=Europe/Moscow
-      # Включение и привязка встроенной песочницы для ИИ-агента
-      - N8N_INSTANCE_AI_SANDBOX_ENABLED=true
-      - N8N_INSTANCE_AI_SANDBOX_PROVIDER=n8n-sandbox
-      - N8N_SANDBOX_SERVICE_URL=http://sandbox-api:8080
-      - N8N_SANDBOX_SERVICE_API_KEY=my-secure-key-123
-      - N8N_INSTANCE_AI_SANDBOX_API_URL=http://sandbox-api:8080
-      - N8N_INSTANCE_AI_SANDBOX_API_KEY=my-secure-key-123
     volumes:
       - n8n_data:/home/node/.local/share/n8n
     restart: unless-stopped
     depends_on:
-      - sandbox-api
       - searxng
-
-  sandbox-api:
-    image: n8nio/n8n-sandbox-service-api:latest
-    container_name: sandbox-api
-    ports:
-      - "3200:8080" # Публикация порта песочницы на хост (3200)
-    environment:
-      - SANDBOX_API_KEYS=my-secure-key-123
-      - SANDBOX_API_RUNNER_REGISTRATION_TOKEN=runner-reg-token-456
-      # Ключ авторизации для вызова sandbox-runner
-      - SANDBOX_API_RUNNER_API_KEY=runner-api-key-789
-      - SANDBOX_API_RUNNER_API_KEYS=runner-api-key-789
-      # Сертификаты для runner-registry gRPC
-      - SANDBOX_API_GRPC_TLS_CERT_FILE=/tls/api/grpc-server.crt
-      - SANDBOX_API_GRPC_TLS_KEY_FILE=/tls/api/grpc-server.key
-      - SANDBOX_API_GRPC_TLS_CLIENT_CA_FILE=/tls/runner/ca.crt
-      # Сертификаты для control-plane gRPC
-      - SANDBOX_API_RUNNER_CONTROL_GRPC_TLS_CERT_FILE=/tls/api/grpc-server.crt
-      - SANDBOX_API_RUNNER_CONTROL_GRPC_TLS_KEY_FILE=/tls/api/grpc-server.key
-      - SANDBOX_API_RUNNER_CONTROL_GRPC_TLS_CA_FILE=/tls/api/ca.crt
-    volumes:
-      - ./certs:/tls
-    restart: unless-stopped
-
-  sandbox-runner:
-    image: n8nio/n8n-sandbox-service-runner-dind:latest
-    container_name: sandbox-runner
-    privileged: true # Требуется для запуска изолированных Docker-контейнеров внутри
-    environment:
-      - SANDBOX_API_URL=http://sandbox-api:8080
-      - SANDBOX_RUNNER_API_KEY=runner-api-key-789
-      - SANDBOX_RUNNER_API_KEYS=runner-api-key-789
-      - SANDBOX_RUNNER_REGISTRATION_TOKEN=runner-reg-token-456
-      # Адрес gRPC API для подключения раннера
-      - SANDBOX_RUNNER_API_GRPC_ADDR=sandbox-api:9090
-      # Базовый HTTP адрес раннера
-      - SANDBOX_RUNNER_HTTP_BASE_URL=http://sandbox-runner:8080
-      # Указываем основной образ n8n для выполнения скриптов
-      - SANDBOX_RUNNER_DOCKER_SANDBOX_IMAGE=ghcr.io/n8n-io/n8n-sandbox-service-sandbox:latest
-      # Пути к сертификатам mTLS на стороне раннера
-      - SANDBOX_RUNNER_REGISTRATION_GRPC_CERT_FILE=/tls/runner/grpc-client.crt
-      - SANDBOX_RUNNER_REGISTRATION_GRPC_KEY_FILE=/tls/runner/grpc-client.key
-      - SANDBOX_RUNNER_REGISTRATION_GRPC_CA_FILE=/tls/api/ca.crt
-      # Пути к сертификатам mTLS на стороне раннера для control-plane
-      - SANDBOX_RUNNER_CONTROL_GRPC_TLS_CERT_FILE=/tls/runner/grpc-client.crt
-      - SANDBOX_RUNNER_CONTROL_GRPC_TLS_KEY_FILE=/tls/runner/grpc-client.key
-      - SANDBOX_RUNNER_CONTROL_GRPC_TLS_CLIENT_CA_FILE=/tls/api/ca.crt
-    volumes:
-      - ./certs:/tls
-    restart: unless-stopped
-    depends_on:
-      - sandbox-api
 
   # Бесплатный самохостируемый поисковик для ИИ-агентов N8N
   searxng:
     image: searxng/searxng:latest
     container_name: searxng-dev
     ports:
-      - "8081:8080" # Порт 8081 на хосте
+      - "8081:8080"
     environment:
-      - SEARXNG_SECRET=searxng-secret-key-456 # Секретный ключ для сессий
+      - SEARXNG_SECRET=searxng-secret-key-456
     volumes:
       - ./searxng:/etc/searxng
     restart: unless-stopped
