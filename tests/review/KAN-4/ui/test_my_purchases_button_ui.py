@@ -34,6 +34,7 @@ def _open_home_via_debug_otp(logged_out_driver, test_user, settings) -> HomePage
 @pytest.mark.review
 @pytest.mark.positive
 @pytest.mark.requires_debug_otp
+@pytest.mark.qase_case("1162")
 @allure.id("KAN-4-1162")
 @allure.title('[UI][Positive] Кнопка "Мои покупки" отображается на главном экране')
 def test_my_purchases_button_is_visible_on_home(logged_out_driver, test_user, settings):

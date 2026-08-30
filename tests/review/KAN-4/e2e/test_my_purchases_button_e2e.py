@@ -35,6 +35,7 @@ def _open_home_via_debug_otp(logged_out_driver, test_user, settings) -> HomePage
 @pytest.mark.e2e
 @pytest.mark.positive
 @pytest.mark.requires_debug_otp
+@pytest.mark.qase_case("1174")
 @allure.id("KAN-4-1174")
 @allure.title('[E2E][Positive] Пользователь открывает приложение и видит кнопку "Мои покупки" на главном экране')
 def test_user_sees_my_purchases_button_on_home(logged_out_driver, test_user, settings):
