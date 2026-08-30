@@ -13,13 +13,14 @@ services:
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
       - GENERIC_TIMEZONE=Europe/Moscow
+      # Фиксированный ключ шифрования для сохранения учётных записей и сессий при перезапусках
+      - N8N_ENCRYPTION_KEY=sminex-n8n-static-encryption-key-2026
     volumes:
       - n8n_data:/home/node/.local/share/n8n
     restart: unless-stopped
     depends_on:
       - searxng
 
-  # Бесплатный самохостируемый поисковик для ИИ-агентов N8N
   searxng:
     image: searxng/searxng:latest
     container_name: searxng-dev
