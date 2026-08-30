@@ -1,113 +1,164 @@
-# 📘 Полная База Знаний и Руководство Проекта: Sminex Mobile Autotest Framework
+# База знаний проекта `autotest_mobile`
 
-Настоящий документ содержит все технические знания, архитектурные решения, конфигурации и инструкции для ведения и управления проектом прямо из **PyCharm**.
+## Назначение
 
----
-
-## 🛠️ 1. Общий обзор и Архитектура Проекта
-
-Проект представляет собой автоматизированный фреймворк генерации, верификации и промоушна автотестов (UI Appium Android, API, E2E) с двухсторонней связью с **Jira**, **n8n**, **Qase TMS** и **GitHub Actions**.
-
-### Схема взаимодействия компонентов:
+Проект содержит Android UI/E2E-тесты на Appium и API-тесты на pytest. Он
+принимает ручные тест-кейсы из n8n, генерирует тесты для ревью, проверяет их и
+после одобрения переносит в постоянные наборы.
 
 ```mermaid
-flowchart TD
-    A[Jira Issue (In Testing)] -->|Webhook| B[n8n Workflow]
-    B -->|LLM Normalization & Qase Fetch| C[PyCharm Agent (agent_codegen.py:5000)]
-    C -->|Auto-Start Appium:4723| D[Генерация тестов на ревью: tests/review/<JIRA_KEY>/]
-    D -->|Pytest Check| E[QA Review в PyCharm / GitHub PR CI]
-    E -->|promote_review_tests.py --verify --apply| F[Перенос в tests/ui, tests/api, tests/e2e]
-    F -->|PATCH Custom Fields| G[Qase TMS (Status remains Manual, fields updated)]
-    F -->|Git Commit & Push| H[GitHub Repository sminex-mobile]
+flowchart LR
+    Jira --> n8n
+    n8n -->|POST /agent/trigger-codegen| Agent[Локальный PyCharm Agent]
+    Agent --> Review[tests/review/JIRA_KEY]
+    Review -->|pytest + ревью| Promote[tools/promote_review_tests.py]
+    Promote --> Tests[tests/ui · tests/api · tests/e2e]
+    Promote -->|PATCH custom fields| Qase[Исходный ручной кейс Qase]
 ```
 
----
+## Структура и ответственные файлы
 
-## 📁 2. Структура Проекта и Назначение Файлов
+| Путь | Назначение |
+| --- | --- |
+| `tools/n8n_agent_server.py` | HTTP-агент n8n на порту 5000; генерация тестов и автозапуск Appium для входящих Android UI/E2E задач. |
+| `run/venv/start_n8n_agent.bat` | Рекомендуемый запуск агента: читает секреты из игнорируемого `.n8n-agent.env`. |
+| `tools/promote_review_tests.py` | Проверка и перенос тестов из review в постоянные каталоги. |
+| `tools/sync_qase_coverage.py` | Заполняет поля покрытия исходного ручного кейса Qase. |
+| `clients/qase_api_client.py` | Минимальный клиент Qase API для обновления custom fields. |
+| `tests/review/manifest.json` | Реестр сгенерированных тестов: `pending_review` или `promoted`. |
+| `tests/ui`, `tests/api`, `tests/e2e` | Постоянные наборы проверенных тестов. |
+| `.github/workflows/promote-approved-tests.yml` | Ручной GitHub Actions workflow для промоута на self-hosted Windows runner. |
+
+В проекте нет актуальных корневых файлов `agent_codegen.py`,
+`promote_review_tests.py` и `sync_autotests.py`: используйте пути из таблицы.
+
+## Секреты и конфигурация
+
+Никогда не добавляйте значения токенов в Git, документацию, n8n node parameters
+или чат. Файлы `.env` и `.n8n-agent.env` игнорируются Git.
+
+| Где | Переменные |
+| --- | --- |
+| `.n8n-agent.env` на рабочей машине | `OPENAI_API_KEY`, `N8N_AGENT_TOKEN`, при необходимости `N8N_AGENT_HOST`, `N8N_AGENT_PORT`. |
+| `.env` на рабочей машине | `QASE_API_TOKEN`, `QASE_PROJECT_CODE`, `QASE_FIELD_AUTOMATION_*`, параметры Android и тестового пользователя. |
+| GitHub repository secrets | `QASE_API_TOKEN`, `TEST_PHONE`. |
+
+Если секрет когда-либо попал в коммит, лог, скриншот или документацию, его
+нужно отозвать и выпустить новый в соответствующем сервисе.
+
+## Локальный агент n8n
+
+Запуск из корня проекта:
+
+```powershell
+run\venv\start_n8n_agent.bat
+```
+
+Проверка доступности:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:5000/health
+```
+
+Для n8n, работающего в Docker, используется:
 
 ```text
-autotest_mobile/
-├── agent_codegen.py              # HTTP-сервер агента (порт 5000) + автозапуск Appium (:4723)
-├── promote_review_tests.py       # Скрипт верификации, переноса тестов и обновления Qase
-├── sync_autotests.py             # Вспомогательный скрипт экспорта автотестов в Qase / n8n
-├── docker-compose-n8n.yml        # Docker Compose файл n8n (со статическим N8N_ENCRYPTION_KEY)
-├── n8n_workflow_template.json    # Выверенный готовый воркфлоу n8n (со встроенными Auth заголовками)
-├── requirements.txt              # Зависимости Python (pytest, allure-pytest, Appium-Python-Client)
-├── Dockerfile / docker-compose.yml # Конфигурации контейнеризации для тест-раннера
-├── .github/workflows/
-│   ├── verify-review-tests.yml   # CI на GitHub: проверка PR изменений в tests/review/
-│   └── promote-approved-tests.yml # CD на GitHub: ручной промоушн тестов через workflow_dispatch
-└── tests/
-    ├── manifest.json             # Главный реестр перенесенных автотестов
-    ├── review/
-    │   ├── manifest.json         # Реестр тестов на ревью (status: pending_review | promoted)
-    │   └── <JIRA_KEY>/           # Папки сгенерированных тестов на ревью (ui, back, e2e)
-    ├── ui/                       # Постоянные UI автотесты
-    ├── api/                      # Постоянные API автотесты
-    └── e2e/                      # Постоянные E2E автотесты
+POST http://host.docker.internal:5000/agent/trigger-codegen
+Authorization: Bearer <N8N_AGENT_TOKEN>
 ```
 
----
+Appium **не запускается при старте HTTP-агента**. Агент проверяет и запускает
+его только во время обработки Android-кейсов типа `UI` или `E2E`.
 
-## 🔑 3. Ключевые Переменные Окружения и Секреты
+### Контракт запроса n8n
 
-| Переменная | Значение по умолчанию | Назначение |
-| :--- | :--- | :--- |
-| `QASE_API_TOKEN` | `0a18fa9527fd31956a9353995bb62ccc94a23e547272b959484224cfda98bce6` | Токен авторизации Qase API |
-| `QASE_PROJECT_CODE` | `ROMEO` | Код проекта в Qase TMS |
-| `N8N_AGENT_TOKEN` | `n8n_agent_secret_token` | Bearer-токен защиты `/agent/trigger-codegen` |
-| `N8N_ENCRYPTION_KEY` | `sminex-n8n-static-encryption-key-2026` | Ключ сохранения сессий n8n между перезапусками |
+```json
+{
+  "task": "Сгенерируй Android-автотесты по ручным кейсам",
+  "platform": "android",
+  "jiraKey": "KAN-4",
+  "apply": true,
+  "testCases": [
+    {
+      "id": "KAN-4-1162",
+      "qaseCaseId": 1162,
+      "title": "Кнопка «Мои покупки» отображается на главном экране",
+      "type": "UI",
+      "steps": [
+        {
+          "action": "Открыть главный экран",
+          "expected": "Кнопка видима и доступна"
+        }
+      ]
+    }
+  ]
+}
+```
 
----
+Обязательные поля каждого кейса: `id`, `title`, непустой список `steps`, а у
+каждого шага — `action` и `expected`. `qaseCaseId` необязателен, но для связи с
+Qase должен быть числовым. При наличии этого поля агент требует добавить в
+тест `@pytest.mark.qase_case("<ID>")`.
 
-## 🎯 4. Специфика Интеграции с Qase TMS
+При `apply: true` тесты появляются в `tests/review/<JIRA_KEY>/<ui|api|e2e>/`,
+получают `@pytest.mark.review`, а в `tests/review/manifest.json` создаётся
+запись `pending_review`. При `apply: false` изменения только возвращаются в
+HTTP-ответе.
 
-В соответствии с правилами проекта:
-1. **Отдельные автотесты в Qase НЕ создаются** (избегаем дублирования мануальных кейсов).
-2. **Системное поле `Automation Status` НЕ меняется** (остаётся в значении `Manual`).
-3. При промоушне тестов через `promote_review_tests.py` выполняется `PATCH`-запрос к `https://api.qase.io/v1/case/ROMEO/{qaseCaseId}` и заполняются **кастомные поля**:
-   - `ID 1` (**Automation Coverage**) = `Automated`
-   - `ID 2` (**Automation Type**) = `UI` / `API` / `E2E`
-   - `ID 3` (**Automation Code Path**) = путь к тесту, например: `tests/ui/test_ui_...py`
-   - `ID 4` (**Automation Test ID**) = `Allure ID` (числовой Qase Case ID)
-   - `ID 5` (**Automation Note**) = отметка времени успешной проверки и переноса.
+## Проверка и промоут
 
----
+Проверка конкретной задачи:
 
-## 💻 5. Настройка PyCharm для Управления Проектом
+```powershell
+.venv\Scripts\python.exe -m pytest tests/review/KAN-4/ -v
+```
 
-Чтобы удобно управлять всем циклом прямо из PyCharm, настройте следующие **Run Configurations**:
+Промоут выполняется только после одобрения ревью:
 
-### 1️⃣ Запуск Агента Генерации (Agent Codegen)
-* **Type**: Python
-* **Script path**: `agent_codegen.py`
-* **Parameters**: `--port 5000`
-* **Working directory**: `D:\One Drive\OneDrive\Рабочий стол\autotest_mobile`
-*(При запуске агент сам проверит и поднимет Appium-сервер на порту 4723).*
+```powershell
+.venv\Scripts\python.exe tools/promote_review_tests.py KAN-4 --verify --apply
+```
 
-### 2️⃣ Прогон Тестов на Ревью (pytest Review)
-* **Type**: pytest
-* **Target**: `Custom` -> `tests/review/`
-* **Additional Arguments**: `-v -m review`
+Скрипт блокирует файлы с `pass`, `TODO`, заглушками и существующим файлом в
+целевом каталоге. После успешной проверки он переносит файлы в `tests/ui`,
+`tests/api` или `tests/e2e`, убирает `@pytest.mark.review` и меняет запись
+манифеста на `promoted`.
 
-### 3️⃣ Локальный Промоушн Тестов (Promote Review Tests)
-* **Type**: Python
-* **Script path**: `promote_review_tests.py`
-* **Parameters**: `--verify --apply --jira-key KAN-4` *(или без `--jira-key` для всех)*
+## Qase: учёт покрытия без дубликатов
 
-### 4️⃣ Прогон Всех Постоянных Тестов (pytest Main)
-* **Type**: pytest
-* **Target**: `Custom` -> `tests/`
+В Qase не создаются отдельные автотест-кейсы. Исходный ручной кейс остаётся со
+системным статусом `Manual`; меняются только проектные custom fields:
 
----
+| Поле | Значение после промоута |
+| --- | --- |
+| Automation Coverage | `Automated` |
+| Automation Type | `UI`, `API` или `E2E` |
+| Automation Code Path | Путь к Python-тесту в репозитории |
+| Automation Test ID | Allure ID теста, например `KAN-4-1162` |
+| Automation Note | Отметка о поддерживаемом проверенном тесте |
 
-## 🔄 6. Полный жизненный цикл задачи (Cheat-Sheet)
+Qase обновляется только для тест-функций с явным маркером
+`@pytest.mark.qase_case("<числовой ID ручного Qase-кейса>")`. Это исключает
+обновление неправильного кейса по совпадению названий.
 
-1. **Jira**: Задача переходит в статус *In Testing*.
-2. **n8n**: Отправляет данные задачи в локальный агент `http://host.docker.internal:5000/agent/trigger-codegen`.
-3. **Agent**: Создает автотест в `tests/review/<JIRA_KEY>/` с маркерами `@pytest.mark.review` и `@pytest.mark.qase_case("<qaseCaseId>")`.
-4. **PyCharm**: Вы запускаете конфигурацию **"pytest Review"** для проверки.
-5. **Git**: Делаете `git push origin main`.
-6. **GitHub Actions**:
-   - Автоматически проверяет PR (`Verify Review Tests CI`).
-   - По нажатию кнопки **Run workflow** в `Promote Approved Tests` автоматически переносит тесты в `tests/ui`, снимает маркер `@pytest.mark.review`, обновляет поля в Qase TMS и делает коммит в репозиторий.
+## GitHub Actions
+
+Workflow **Promote Approved Tests** запускается вручную в разделе
+`Actions → Promote Approved Tests → Run workflow` и требует Jira key.
+
+Он использует self-hosted Windows runner, потому что GitHub-hosted runner не
+содержит установленное мобильное приложение и доступный Android-эмулятор.
+Перед запуском runner должен иметь:
+
+- `adb`, Appium и подключённый Android-эмулятор/устройство;
+- установленное приложение `com.sminex.sminex_app`;
+- доступные GitHub secrets `QASE_API_TOKEN` и `TEST_PHONE`;
+- права GitHub Actions на запись содержимого репозитория.
+
+Workflow запускает pytest, выполняет промоут, обновляет Qase при наличии
+`qase_case` маркера и коммитит изменения внутри `tests/`. Локальная проверка
+остается основным способом отладки Appium-сценариев.
+
+`Verify Review Tests CI` существует для pull request, но для UI/E2E ему также
+нужен Android-совместимый runner; не считайте GitHub-hosted Ubuntu runner
+достаточной средой для мобильной проверки.
