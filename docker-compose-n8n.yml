@@ -22,7 +22,7 @@ services:
       - N8N_AGENT_TOKEN=n8n_agent_secret_token
       - JIRA_URL=https://romeo-timony.atlassian.net
     volumes:
-      - n8n_data:/home/node/.local/share/n8n
+      - n8n_data:/home/node/.n8n
     restart: unless-stopped
     depends_on:
       - searxng
