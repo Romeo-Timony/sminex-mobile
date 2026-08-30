@@ -9,9 +9,12 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
-      - N8N_HOST=localhost
+      - N8N_HOST=stylish-mary-bluebelled.ngrok-free.dev
       - N8N_PORT=5678
-      - N8N_PROTOCOL=http
+      - N8N_PROTOCOL=https
+      - N8N_EDITOR_BASE_URL=https://stylish-mary-bluebelled.ngrok-free.dev/
+      - WEBHOOK_URL=https://stylish-mary-bluebelled.ngrok-free.dev/
+      - N8N_PROXY_HOPS=1
       - GENERIC_TIMEZONE=Europe/Moscow
       # Фиксированный ключ шифрования для сохранения учётных записей и сессий при перезапусках
       - N8N_ENCRYPTION_KEY=sminex-n8n-static-encryption-key-2026
