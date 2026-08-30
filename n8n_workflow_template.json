@@ -41,9 +41,16 @@
       {
         "parameters": {
           "method": "POST",
-          "url": "=https://your-jira-instance/rest/api/2/issue/{{ $('Jira Webhook (In Testing)').item.json[\"body\"][\"issue\"][\"key\"] }}/comment",
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpHeaderAuth",
+          "url": "=https://romeo-timony.atlassian.net/rest/api/2/issue/{{ $('Jira Webhook (In Testing)').item.json[\"body\"][\"issue\"][\"key\"] }}/comment",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
           "sendBody": true,
           "bodyParameters": {
             "parameters": [
@@ -75,8 +82,19 @@
         "parameters": {
           "method": "GET",
           "url": "https://api.qase.io/v1/case/ROMEO?limit=100",
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpHeaderAuth"
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Token",
+                "value": "0a18fa9527fd31956a9353995bb62ccc94a23e547272b959484224cfda98bce6"
+              },
+              {
+                "name": "Accept",
+                "value": "application/json"
+              }
+            ]
+          }
         },
         "id": "4e7a83fa-cf7d-419b-a37a-e490e58c0bdf",
         "name": "Fetch Existing Qase Manual TCs",
@@ -99,8 +117,19 @@
         "parameters": {
           "method": "POST",
           "url": "http://host.docker.internal:5000/agent/trigger-codegen",
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Authorization",
+                "value": "Bearer n8n_agent_secret_token"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ]
+          },
           "sendBody": true,
           "specifyBody": "json",
           "jsonBody": "={\n  \"task\": \"Сгенерируй Android-автотесты по ручным кейсам\",\n  \"platform\": \"android\",\n  \"jiraKey\": \"{{ $('Jira Webhook (In Testing)').item.json[\"body\"][\"issue\"][\"key\"] }}\",\n  \"apply\": true,\n  \"testCases\": {{ $json[\"text\"] }}\n}"
