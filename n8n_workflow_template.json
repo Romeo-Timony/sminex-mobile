@@ -1,0 +1,226 @@
+[
+  {
+    "id": "1",
+    "active": false,
+    "name": "Jira-to-AllureTestOps-QA-Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "jira-testing-trigger",
+        "options": {}
+      },
+      "id": "1e16f39d-b8d4-42f7-b43e-7977469a4fb1",
+      "name": "Jira Webhook (In Testing)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "prompt": "=/Normalize the following Technical Specification from Jira:\n{{ $json[\"body\"][\"issue\"][\"fields\"][\"description\"] }}"
+      },
+      "id": "e96c56db-83b3-46c9-b3a5-2965377f7229",
+      "name": "LLM: Normalize TS",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "prompt": "=/Generate a QA checklist (positive, negative, integration, UI) for this normalized TS:\n{{ $json[\"text\"] }}"
+      },
+      "id": "e2f1e29c-fa20-4e3a-96e0-b6f709b1f2e8",
+      "name": "LLM: Generate Checklist",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [650, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://your-jira-instance/rest/api/2/issue/{{ $('Jira Webhook (In Testing)').item.json[\"body\"][\"issue\"][\"key\"] }}/comment",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "body",
+              "value": "={{ $json[\"text\"] }}"
+            }
+          ]
+        }
+      },
+      "id": "fa2b39ad-2bf0-4fb2-bd74-4b5314a51139",
+      "name": "Add Checklist to Jira",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [850, 200]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "prompt": "=/Generate structured manual test cases in JSON format (UI, API, E2E) with Title, Type, Preconditions, Steps, and Expected Results based on this normalized TS:\n{{ $('LLM: Normalize TS').item.json[\"text\"] }}"
+      },
+      "id": "9742da8c-5721-4f11-9a74-b52e078f4a13",
+      "name": "LLM: Generate TCs (JSON)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [650, 400]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://your-allure-testops/api/rs/testcase",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "4e7a83fa-cf7d-419b-a37a-e490e58c0bdf",
+      "name": "Fetch Existing Allure TCs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [850, 520]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "prompt": "=/Compare the new test cases:\n{{ $('LLM: Generate TCs (JSON)').item.json[\"text\"] }}\n\nwith existing Allure test cases:\n{{ $json[\"content\"] }}\n\nIdentify and remove duplicates, validate relevance to TS. Return filtered JSON test cases."
+      },
+      "id": "b3e94a82-124e-4f1b-ab5c-9cb304a0e1c2",
+      "name": "LLM: Review & Deduplicate",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1050, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://your-allure-testops/api/rs/testcase/import",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "testCases",
+              "value": "={{ $json[\"text\"] }}"
+            }
+          ]
+        }
+      },
+      "id": "cae38a20-0081-42ab-ba0c-2df28390ad1c",
+      "name": "Import TCs to Allure TestOps",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1250, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5000/agent/trigger-codegen",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "testCases",
+              "value": "={{ $json[\"body\"] }}"
+            }
+          ]
+        }
+      },
+      "id": "e92c42ab-7bf0-410a-8bf8-d3e904ab724b",
+      "name": "Trigger PyCharm Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1450, 400]
+    }
+  ],
+  "connections": {
+    "Jira Webhook (In Testing)": {
+      "main": [
+        [
+          {
+            "node": "LLM: Normalize TS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM: Normalize TS": {
+      "main": [
+        [
+          {
+            "node": "LLM: Generate Checklist",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "LLM: Generate TCs (JSON)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM: Generate Checklist": {
+      "main": [
+        [
+          {
+            "node": "Add Checklist to Jira",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM: Generate TCs (JSON)": {
+      "main": [
+        [
+          {
+            "node": "Fetch Existing Allure TCs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Existing Allure TCs": {
+      "main": [
+        [
+          {
+            "node": "LLM: Review & Deduplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM: Review & Deduplicate": {
+      "main": [
+        [
+          {
+            "node": "Import TCs to Allure TestOps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Import TCs to Allure TestOps": {
+      "main": [
+        [
+          {
+            "node": "Trigger PyCharm Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+]

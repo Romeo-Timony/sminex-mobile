@@ -1,0 +1,158 @@
+{
+  "last_updated": "2026-08-30T09:35:38.590606",
+  "generated_tests_on_review": [
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "0",
+      "type": "UI",
+      "title": "[UI] Запрос восстановления пароля через электронную почту",
+      "file_path": "tests/review\\KAN-1\\ui\\test_ui_ui_zapros_vosstanovleniya_parolya_cherez_elektronn.py",
+      "function_name": "test_ui_zapros_vosstanovleniya_parolya_cherez_elektronn",
+      "status": "pending_review"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "0",
+      "type": "UI",
+      "title": "[API] Интеграция функции восстановления пароля через электронную почту",
+      "file_path": "tests/review\\KAN-1\\ui\\test_ui_api_integratsiya_funktsii_vosstanovleniya_parolya_.py",
+      "function_name": "test_api_integratsiya_funktsii_vosstanovleniya_parolya_",
+      "status": "pending_review"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "0",
+      "type": "UI",
+      "title": "[E2E] Восстановление пароля с помощью секретной ссылки",
+      "file_path": "tests/review\\KAN-1\\ui\\test_ui_e2e_vosstanovlenie_parolya_s_pomoshchyu_sekretnoy_.py",
+      "function_name": "test_e2e_vosstanovlenie_parolya_s_pomoshchyu_sekretnoy_",
+      "status": "pending_review"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "0",
+      "type": "UI",
+      "title": "[API] Создание задачи",
+      "file_path": "tests/review\\KAN-1\\ui\\test_ui_api_sozdanie_zadachi.py",
+      "function_name": "test_api_sozdanie_zadachi",
+      "status": "pending_review"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "0",
+      "type": "UI",
+      "title": "[UI] Управление проектами",
+      "file_path": "tests/review\\KAN-1\\ui\\test_ui_ui_upravlenie_proektami.py",
+      "function_name": "test_ui_upravlenie_proektami",
+      "status": "pending_review"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "0",
+      "type": "UI",
+      "title": "[E2E] Просмотр статистики",
+      "file_path": "tests/review\\KAN-1\\ui\\test_ui_e2e_prosmotr_statistiki.py",
+      "function_name": "test_e2e_prosmotr_statistiki",
+      "status": "pending_review"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "KAN-1-1",
+      "type": "UI",
+      "title": "[UI] Проверка кнопки входа",
+      "file_path": "tests/review\\KAN-1\\ui\\test_ui_ui_proverka_knopki_vkhoda.py",
+      "function_name": "test_ui_proverka_knopki_vkhoda",
+      "status": "pending_review"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "KAN-1-2",
+      "type": "API",
+      "title": "[API] Получение списка пользователей",
+      "file_path": "tests/review\\KAN-1\\back\\test_api_api_poluchenie_spiska_polzovateley.py",
+      "function_name": "test_api_poluchenie_spiska_polzovateley",
+      "status": "pending_review"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "KAN-1-3",
+      "type": "E2E",
+      "title": "[E2E] Регистрация нового пользователя",
+      "file_path": "tests/review\\KAN-1\\e2e\\test_e2e_e2e_registratsiya_novogo_polzovatelya.py",
+      "function_name": "test_e2e_registratsiya_novogo_polzovatelya",
+      "status": "pending_review"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "KAN-1-2",
+      "type": "API",
+      "title": "[API] Проверка получения списка пользователей",
+      "file_path": "tests/review\\KAN-1\\back\\test_api_api_proverka_polucheniya_spiska_polzovateley.py",
+      "function_name": "test_api_proverka_polucheniya_spiska_polzovateley",
+      "status": "pending_review"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "KAN-1-3",
+      "type": "E2E",
+      "title": "[E2E] Проверка процесса регистрации",
+      "file_path": "tests/review\\KAN-1\\e2e\\test_e2e_e2e_proverka_protsessa_registratsii.py",
+      "function_name": "test_e2e_proverka_protsessa_registratsii",
+      "status": "pending_review"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "0",
+      "type": "UI",
+      "title": "[UI] Test 1",
+      "file_path": "tests/review\\KAN-1\\ui\\test_ui_ui_test_1.py",
+      "function_name": "test_ui_test_1",
+      "status": "pending_review"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "KAN-1-3",
+      "type": "E2E",
+      "title": "[E2E] Проверка регистрации нового пользователя",
+      "file_path": "tests/review\\KAN-1\\e2e\\test_e2e_e2e_proverka_registratsii_novogo_polzovatelya.py",
+      "function_name": "test_e2e_proverka_registratsii_novogo_polzovatelya",
+      "status": "pending_review"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "KAN-1-4",
+      "type": "UI",
+      "title": "[UI] Проверка отображения главной страницы",
+      "file_path": "tests/review\\KAN-1\\ui\\test_ui_ui_proverka_otobrazheniya_glavnoy_stranitsy.py",
+      "function_name": "test_ui_proverka_otobrazheniya_glavnoy_stranitsy",
+      "status": "pending_review"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "KAN-1-5",
+      "type": "API",
+      "title": "[API] Создание нового поста",
+      "file_path": "tests/review\\KAN-1\\back\\test_api_api_sozdanie_novogo_posta.py",
+      "function_name": "test_api_sozdanie_novogo_posta",
+      "status": "pending_review"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "KAN-1-6",
+      "type": "E2E",
+      "title": "[E2E] Поиск товара",
+      "file_path": "tests/review\\KAN-1\\e2e\\test_e2e_e2e_poisk_tovara.py",
+      "function_name": "test_e2e_poisk_tovara",
+      "status": "pending_review"
+    },
+    {
+      "jira_key": "KAN-4",
+      "qase_id": "KAN-4-1162",
+      "type": "UI",
+      "title": "Кнопка «Мои покупки» отображается на главном экране",
+      "file_path": "tests/ui/test_ui_knopka_moi_pokupki_otobrazhaetsya_na_glavnom_ekran.py",
+      "function_name": "test_knopka_moi_pokupki_otobrazhaetsya_na_glavnom_ekran",
+      "status": "promoted"
+    }
+  ]
+}

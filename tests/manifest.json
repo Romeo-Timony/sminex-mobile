@@ -1,0 +1,53 @@
+{
+  "last_updated": "2026-08-30T09:35:38.590606",
+  "generated_tests": [
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "0",
+      "type": "UI",
+      "title": "[UI] Цель и контекст",
+      "file_path": "tests/ui\\test_ui_ui_tsel_i_kontekst.py",
+      "function_name": "test_ui_tsel_i_kontekst"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "0",
+      "type": "UI",
+      "title": "[API] Функциональные требования",
+      "file_path": "tests/ui\\test_ui_api_funktsionalnye_trebovaniya.py",
+      "function_name": "test_api_funktsionalnye_trebovaniya"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "0",
+      "type": "UI",
+      "title": "[API] API и технические контракты",
+      "file_path": "tests/ui\\test_ui_api_api_i_tekhnicheskie_kontrakty.py",
+      "function_name": "test_api_api_i_tekhnicheskie_kontrakty"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "0",
+      "type": "UI",
+      "title": "[UI] Требования к UI/UX",
+      "file_path": "tests/ui\\test_ui_ui_trebovaniya_k_uiux.py",
+      "function_name": "test_ui_trebovaniya_k_uiux"
+    },
+    {
+      "jira_key": "KAN-1",
+      "qase_id": "0",
+      "type": "UI",
+      "title": "[E2E] Критерии приемки",
+      "file_path": "tests/ui\\test_ui_e2e_kriterii_priemki.py",
+      "function_name": "test_e2e_kriterii_priemki"
+    },
+    {
+      "jira_key": "KAN-4",
+      "qase_id": "KAN-4-1162",
+      "type": "UI",
+      "title": "Кнопка «Мои покупки» отображается на главном экране",
+      "file_path": "tests/ui/test_ui_knopka_moi_pokupki_otobrazhaetsya_na_glavnom_ekran.py",
+      "function_name": "test_knopka_moi_pokupki_otobrazhaetsya_na_glavnom_ekran"
+    }
+  ]
+}

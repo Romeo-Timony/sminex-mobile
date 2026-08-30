@@ -1,0 +1,43 @@
+name: Pytest Autotests CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  repository_dispatch:
+    types: [ trigger-autotests ]
+
+jobs:
+  test:
+    name: Run Pytest Autotests & Report to Qase
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Pytest Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-allure allure-pytest requests qase-pytest
+
+      - name: Run Pytest Autotests
+        env:
+          QASE_TESTOPS_API_TOKEN: ${{ secrets.QASE_API_TOKEN }}
+          QASE_TESTOPS_PROJECT: "ROMEO"
+        run: |
+          pytest tests/ --alluredir=allure-results -v --ignore=tests/review || true
+
+      - name: Upload Allure Results Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: allure-results
+          retention-days: 7

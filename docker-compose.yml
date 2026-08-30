@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  test-runner:
+    build: .
+    image: qa-test-runner:latest
+    volumes:
+      - .:/app
+      - /app/allure-results
+    environment:
+      - ANDROID_DEVICE_IP=${ANDROID_DEVICE_IP:-host.docker.internal:5555}
+      - APP_APK_PATH=${APP_APK_PATH:-/app/builds/app-debug.apk}
+    network_mode: "host" # Позволяет контейнеру подключаться к локальному adb на хосте
+    command: pytest --alluredir=allure-results
