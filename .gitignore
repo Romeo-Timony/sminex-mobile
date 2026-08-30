@@ -1,5 +1,6 @@
 .env
 .n8n-agent.env
+backups/n8n-state-*/
 .venv/
 .venv-project/
 .idea/

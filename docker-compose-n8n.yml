@@ -19,7 +19,7 @@ services:
       # Фиксированный ключ шифрования для сохранения учётных записей и сессий при перезапусках
       - N8N_ENCRYPTION_KEY=sminex-n8n-static-encryption-key-2026
     volumes:
-      - n8n_data:/home/node/.local/share/n8n
+      - n8n_data:/home/node/.n8n
     restart: unless-stopped
     depends_on:
       - searxng
