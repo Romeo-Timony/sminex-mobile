@@ -4,25 +4,25 @@ services:
   n8n:
     image: docker.n8n.io/n8nio/n8n:latest
     container_name: n8n-dev-instance
-    dns:
-      - 1.1.1.1
-      - 8.8.8.8
     ports:
       - "5678:5678"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
-      - N8N_HOST=stylish-mary-bluebelled.ngrok-free.dev
+      - N8N_HOST=localhost
       - N8N_PORT=5678
-      - N8N_PROTOCOL=https
-      - N8N_EDITOR_BASE_URL=https://stylish-mary-bluebelled.ngrok-free.dev/
-      - WEBHOOK_URL=https://stylish-mary-bluebelled.ngrok-free.dev/
-      - N8N_PROXY_HOPS=1
+      - N8N_PROTOCOL=http
       - GENERIC_TIMEZONE=Europe/Moscow
       # Фиксированный ключ шифрования для сохранения учётных записей и сессий при перезапусках
       - N8N_ENCRYPTION_KEY=sminex-n8n-static-encryption-key-2026
+      # Ключи и токены окружения
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-your_openai_api_key_here}
+      - QASE_API_TOKEN=0a18fa9527fd31956a9353995bb62ccc94a23e547272b959484224cfda98bce6
+      - QASE_PROJECT_CODE=ROMEO
+      - N8N_AGENT_TOKEN=n8n_agent_secret_token
+      - JIRA_URL=https://romeo-timony.atlassian.net
     volumes:
-      - n8n_data:/home/node/.n8n
+      - n8n_data:/home/node/.local/share/n8n
     restart: unless-stopped
     depends_on:
       - searxng
