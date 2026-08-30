@@ -1,0 +1,12 @@
+name: sminex-android-autotests
+
+services:
+  wiremock:
+    image: ghcr.io/wiremock/wiremock:3.13.2-2
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./mocks/wiremock:/home/wiremock
+    command:
+      - --global-response-templating
+      - --verbose

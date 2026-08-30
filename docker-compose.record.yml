@@ -1,0 +1,14 @@
+name: sminex-android-wiremock-recording
+
+services:
+  wiremock-recorder:
+    image: ghcr.io/wiremock/wiremock:3.13.2-2
+    ports:
+      - "8081:8080"
+    volumes:
+      # Keep captured traffic outside stable reviewed mappings.
+      - ./mocks/recordings:/home/wiremock
+    command:
+      - --proxy-all=${WIREMOCK_PROXY_TARGET:-https://apigateway-sc-dev.sminex.digital}
+      - --record-mappings
+      - --verbose

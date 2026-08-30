@@ -1,0 +1,15 @@
+.env
+.n8n-agent.env
+.venv/
+.venv-project/
+.idea/
+__pycache__/
+.pytest_cache/
+allure-results/
+allure-report/
+*.pyc
+*.apk
+mocks/recordings/mappings/*.json
+mocks/recordings/__files/*
+!mocks/recordings/mappings/.gitkeep
+!mocks/recordings/__files/.gitkeep

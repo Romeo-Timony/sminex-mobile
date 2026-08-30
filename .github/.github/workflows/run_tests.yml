@@ -1,0 +1,39 @@
+name: QA Automation Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Run Autotests & Sync with Allure TestOps
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: |
+          docker compose build
+
+      - name: Download allurectl
+        run: |
+          wget https://github.com/allure-framework/allurectl/releases/latest/download/allurectl_linux_386 -O allurectl
+          chmod +x allurectl
+          sudo mv allurectl /usr/local/bin/
+
+      - name: Run tests inside Docker with Allure TestOps tracking
+        env:
+          ALLURE_ENDPOINT: ${{ secrets.ALLURE_ENDPOINT }}
+          ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
+          ALLURE_PROJECT_ID: ${{ secrets.ALLURE_PROJECT_ID }}
+          ALLURE_LAUNCH_NAME: "GitHub Actions Run - ${{ github.ref_name }}"
+        run: |
+          allurectl watch -- docker compose run test-runner
+

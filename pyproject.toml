@@ -1,0 +1,15 @@
+[project]
+name = "sminex-android-autotests"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "Appium-Python-Client==5.2.4",
+    "allure-pytest==2.16.0",
+    "pytest==8.4.2",
+    "python-dotenv==1.2.1",
+    "requests==2.32.5",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
