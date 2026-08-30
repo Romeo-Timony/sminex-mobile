@@ -18,8 +18,10 @@
       },
       {
         "parameters": {
+          "resource": "text",
+          "operation": "complete",
           "model": "gpt-4o",
-          "prompt": "=/Normalize the following Technical Specification from Jira issue {{ $json[\"body\"][\"issue\"][\"key\"] }}:\n{{ $json[\"body\"][\"issue\"][\"fields\"][\"description\"] }}"
+          "prompt": "=/Normalize the following Technical Specification from Jira:\n{{ $json[\"body\"][\"issue\"][\"fields\"][\"description\"] }}"
         },
         "id": "e96c56db-83b3-46c9-b3a5-2965377f7229",
         "name": "LLM: Normalize TS",
@@ -29,8 +31,10 @@
       },
       {
         "parameters": {
+          "resource": "text",
+          "operation": "complete",
           "model": "gpt-4o",
-          "prompt": "=/Generate a QA checklist (positive, negative, integration, UI/Mobile) for this normalized TS:\n{{ $json[\"text\"] }}"
+          "prompt": "=/Generate a QA checklist (positive, negative, integration, UI) for this normalized TS:\n{{ $json[\"text\"] }}"
         },
         "id": "e2f1e29c-fa20-4e3a-96e0-b6f709b1f2e8",
         "name": "LLM: Generate Checklist",
@@ -42,15 +46,8 @@
         "parameters": {
           "method": "POST",
           "url": "=https://romeo-timony.atlassian.net/rest/api/2/issue/{{ $('Jira Webhook (In Testing)').item.json[\"body\"][\"issue\"][\"key\"] }}/comment",
-          "sendHeaders": true,
-          "headerParameters": {
-            "parameters": [
-              {
-                "name": "Content-Type",
-                "value": "application/json"
-              }
-            ]
-          },
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
           "sendBody": true,
           "bodyParameters": {
             "parameters": [
@@ -69,8 +66,10 @@
       },
       {
         "parameters": {
+          "resource": "text",
+          "operation": "complete",
           "model": "gpt-4o",
-          "prompt": "=/Generate structured manual test cases in valid JSON array format (UI, API, E2E) for Jira Key {{ $('Jira Webhook (In Testing)').item.json[\"body\"][\"issue\"][\"key\"] }}.\nEach object MUST have fields:\n- id: string (e.g. \"{{ $('Jira Webhook (In Testing)').item.json[\"body\"][\"issue\"][\"key\"] }}-1162\")\n- qaseCaseId: integer (numeric ID in Qase)\n- title: string\n- type: \"UI\", \"API\", or \"E2E\"\n- steps: array of objects with \"action\" and \"expected\"\n\nBase TS:\n{{ $('LLM: Normalize TS').item.json[\"text\"] }}"
+          "prompt": "=/Generate structured manual test cases in JSON format (UI, API, E2E) with Title, Type, Preconditions, Steps, and Expected Results based on this normalized TS:\n{{ $('LLM: Normalize TS').item.json[\"text\"] }}"
         },
         "id": "9742da8c-5721-4f11-9a74-b52e078f4a13",
         "name": "LLM: Generate TCs (JSON)",
@@ -87,7 +86,7 @@
             "parameters": [
               {
                 "name": "Token",
-                "value": "SET_IN_N8N_CREDENTIALS"
+                "value": "0a18fa9527fd31956a9353995bb62ccc94a23e547272b959484224cfda98bce6"
               },
               {
                 "name": "Accept",
@@ -104,11 +103,13 @@
       },
       {
         "parameters": {
+          "resource": "text",
+          "operation": "complete",
           "model": "gpt-4o",
-          "prompt": "=/Compare generated test cases:\n{{ $('LLM: Generate TCs (JSON)').item.json[\"text\"] }}\n\nwith existing Qase cases:\n{{ $json[\"result\"][\"entities\"] }}\n\nDeduplicate and ensure formatting matches requirements. Return JSON array of clean test cases."
+          "prompt": "=/Compare the new test cases:\n{{ $('LLM: Generate TCs (JSON)').item.json[\"text\"] }}\n\nwith existing Allure / Qase test cases:\n{{ $json[\"result\"][\"entities\"] }}\n\nIdentify and remove duplicates, validate relevance to TS. Return filtered JSON test cases."
         },
         "id": "b3e94a82-124e-4f1b-ab5c-9cb304a0e1c2",
-        "name": "LLM: Deduplicate & Format",
+        "name": "LLM: Review & Deduplicate",
         "type": "n8n-nodes-base.openAi",
         "typeVersion": 1,
         "position": [1050, 400]
@@ -122,7 +123,7 @@
             "parameters": [
               {
                 "name": "Authorization",
-                "value": "Bearer {{$env.N8N_AGENT_TOKEN}}"
+                "value": "Bearer n8n_agent_secret_token"
               },
               {
                 "name": "Content-Type",
@@ -195,14 +196,14 @@
         "main": [
           [
             {
-              "node": "LLM: Deduplicate & Format",
+              "node": "LLM: Review & Deduplicate",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "LLM: Deduplicate & Format": {
+      "LLM: Review & Deduplicate": {
         "main": [
           [
             {
