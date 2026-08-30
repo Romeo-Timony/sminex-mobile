@@ -87,7 +87,7 @@
             "parameters": [
               {
                 "name": "Token",
-                "value": "0a18fa9527fd31956a9353995bb62ccc94a23e547272b959484224cfda98bce6"
+                "value": "SET_IN_N8N_CREDENTIALS"
               },
               {
                 "name": "Accept",
@@ -122,7 +122,7 @@
             "parameters": [
               {
                 "name": "Authorization",
-                "value": "Bearer n8n_agent_secret_token"
+                "value": "Bearer {{$env.N8N_AGENT_TOKEN}}"
               },
               {
                 "name": "Content-Type",
