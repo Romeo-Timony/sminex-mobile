@@ -28,7 +28,7 @@ HOST = os.environ.get("N8N_AGENT_HOST", "0.0.0.0")
 PORT = int(os.environ.get("N8N_AGENT_PORT", "5000"))
 TOKEN = os.environ.get("N8N_AGENT_TOKEN", "")
 API_KEY = os.environ.get("OPENAI_API_KEY", "")
-MODEL = os.environ.get("OPENAI_MODEL", "gpt-5")
+MODEL = os.environ.get("OPENAI_MODEL", "o4-mini")
 EXCLUDED_PARTS = {".git", ".idea", ".venv", ".venv-project", "allure-report", "allure-results", "__pycache__"}
 JIRA_KEY_PATTERN = re.compile(r"^[A-Z][A-Z0-9]+-\d+$")
 MANIFEST_PATH = PROJECT_ROOT / "tests" / "review" / "manifest.json"
@@ -82,6 +82,19 @@ def update_manifest(jira_key: str, files: list[dict], mapping: list[dict]) -> No
             manifest = {"files": []}
         except json.JSONDecodeError as error:
             raise RuntimeError("Review manifest is not valid JSON") from error
+        if isinstance(manifest, dict) and isinstance(manifest.get("generated_tests_on_review"), list):
+            manifest = {
+                "files": [
+                    {
+                        "jira_key": item.get("jira_key"),
+                        "path": str(item.get("file_path", "")).replace("\\\\", "/"),
+                        "status": item.get("status", "pending_review"),
+                        "test_case_ids": [str(item.get("qase_id"))] if item.get("qase_id") else [],
+                    }
+                    for item in manifest["generated_tests_on_review"]
+                    if isinstance(item, dict)
+                ]
+            }
         if not isinstance(manifest, dict) or not isinstance(manifest.get("files"), list):
             raise RuntimeError("Review manifest has an invalid format")
 
@@ -123,6 +136,19 @@ def replace_review_task(jira_key: str) -> None:
             return
         except json.JSONDecodeError as error:
             raise RuntimeError("Review manifest is not valid JSON") from error
+        if isinstance(manifest, dict) and isinstance(manifest.get("generated_tests_on_review"), list):
+            manifest = {
+                "files": [
+                    {
+                        "jira_key": item.get("jira_key"),
+                        "path": str(item.get("file_path", "")).replace("\\\\", "/"),
+                        "status": item.get("status", "pending_review"),
+                        "test_case_ids": [str(item.get("qase_id"))] if item.get("qase_id") else [],
+                    }
+                    for item in manifest["generated_tests_on_review"]
+                    if isinstance(item, dict)
+                ]
+            }
         if not isinstance(manifest, dict) or not isinstance(manifest.get("files"), list):
             raise RuntimeError("Review manifest has an invalid format")
         manifest["files"] = [item for item in manifest["files"] if item.get("jira_key") != jira_key]

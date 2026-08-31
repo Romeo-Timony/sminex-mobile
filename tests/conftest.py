@@ -128,6 +128,7 @@ def driver(settings: Settings):
     options.app_package = settings.app_package
     options.app_activity = settings.app_activity
     options.new_command_timeout = 120
+    options.set_capability("appium:uiautomator2ServerLaunchTimeout", 90000)
     options.no_reset = True
     if settings.app_mode == "apk":
         options.app = str(settings.app_path)

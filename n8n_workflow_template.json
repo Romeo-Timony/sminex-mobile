@@ -20,7 +20,7 @@
         "parameters": {
           "resource": "text",
           "operation": "complete",
-          "model": "gpt-4o",
+          "model": "o4-mini",
           "prompt": "=/Normalize the following Technical Specification from Jira:\n{{ $json[\"body\"][\"issue\"][\"fields\"][\"description\"] }}"
         },
         "id": "e96c56db-83b3-46c9-b3a5-2965377f7229",
@@ -33,7 +33,7 @@
         "parameters": {
           "resource": "text",
           "operation": "complete",
-          "model": "gpt-4o",
+          "model": "o4-mini",
           "prompt": "=/Generate a QA checklist (positive, negative, integration, UI) for this normalized TS:\n{{ $json[\"text\"] }}"
         },
         "id": "e2f1e29c-fa20-4e3a-96e0-b6f709b1f2e8",
@@ -68,7 +68,7 @@
         "parameters": {
           "resource": "text",
           "operation": "complete",
-          "model": "gpt-4o",
+          "model": "o4-mini",
           "prompt": "=/Generate structured manual test cases in JSON format (UI, API, E2E) with Title, Type, Preconditions, Steps, and Expected Results based on this normalized TS:\n{{ $('LLM: Normalize TS').item.json[\"text\"] }}"
         },
         "id": "9742da8c-5721-4f11-9a74-b52e078f4a13",
@@ -86,7 +86,7 @@
             "parameters": [
               {
                 "name": "Token",
-                "value": "0a18fa9527fd31956a9353995bb62ccc94a23e547272b959484224cfda98bce6"
+                "value": "={{ $env.QASE_API_TOKEN }}"
               },
               {
                 "name": "Accept",
@@ -105,7 +105,7 @@
         "parameters": {
           "resource": "text",
           "operation": "complete",
-          "model": "gpt-4o",
+          "model": "o4-mini",
           "prompt": "=/Compare the new test cases:\n{{ $('LLM: Generate TCs (JSON)').item.json[\"text\"] }}\n\nwith existing Allure / Qase test cases:\n{{ $json[\"result\"][\"entities\"] }}\n\nIdentify and remove duplicates, validate relevance to TS. Return filtered JSON test cases."
         },
         "id": "b3e94a82-124e-4f1b-ab5c-9cb304a0e1c2",
@@ -123,7 +123,7 @@
             "parameters": [
               {
                 "name": "Authorization",
-                "value": "Bearer n8n_agent_secret_token"
+                "value": "=Bearer {{ $env.N8N_AGENT_TOKEN }}"
               },
               {
                 "name": "Content-Type",

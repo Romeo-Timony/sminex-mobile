@@ -6,8 +6,14 @@ services:
     container_name: n8n-dev-instance
     ports:
       - "5678:5678"
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    env_file:
+      - .n8n-agent.env
+      - .env
     environment:
       - N8N_HOST=localhost
       - N8N_PORT=5678
@@ -16,10 +22,6 @@ services:
       # Фиксированный ключ шифрования для сохранения учётных записей и сессий при перезапусках
       - N8N_ENCRYPTION_KEY=sminex-n8n-static-encryption-key-2026
       # Ключи и токены окружения
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-your_openai_api_key_here}
-      - QASE_API_TOKEN=0a18fa9527fd31956a9353995bb62ccc94a23e547272b959484224cfda98bce6
-      - QASE_PROJECT_CODE=ROMEO
-      - N8N_AGENT_TOKEN=n8n_agent_secret_token
       - JIRA_URL=https://romeo-timony.atlassian.net
     volumes:
       - n8n_data:/home/node/.n8n
