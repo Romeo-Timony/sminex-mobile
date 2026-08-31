@@ -167,6 +167,14 @@
       "test_case_ids": [
         "KEY-4"
       ]
+    },
+    {
+      "jira_key": "KAN-6",
+      "path": "tests\\ui\\test_privileges_button_ui.py",
+      "status": "promoted",
+      "test_case_ids": [
+        "KAN-6-1"
+      ]
     }
   ]
 }
