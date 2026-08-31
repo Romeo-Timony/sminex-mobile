@@ -2,7 +2,7 @@
 chcp 65001 >nul
 setlocal EnableExtensions DisableDelayedExpansion
 
-set "RUNNER_DIR=C:\actions-runner"
+set "RUNNER_DIR=%~dp0..\github-actions-runner"
 set "REPOSITORY_URL=https://github.com/Romeo-Timony/sminex-mobile"
 set "RUNNER_NAME=autotest-mobile-windows"
 
@@ -28,5 +28,5 @@ if errorlevel 1 (
 popd
 
 echo [READY] Local GitHub Actions runner is registered.
-echo Start it manually when needed: C:\actions-runner\run.cmd
+echo Start it manually when needed: "%RUNNER_DIR%\run.cmd"
 exit /b 0
