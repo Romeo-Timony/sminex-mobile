@@ -25,14 +25,8 @@ if errorlevel 1 (
     exit /b 1
 )
 
-call svc.cmd install
-if errorlevel 1 (
-    echo [ERROR] Service installation needs an Administrator terminal.
-    popd
-    exit /b 1
-)
-call svc.cmd start
 popd
 
-echo [READY] Local GitHub Actions runner is registered and started as a Windows service.
+echo [READY] Local GitHub Actions runner is registered.
+echo Start it manually when needed: C:\actions-runner\run.cmd
 exit /b 0
