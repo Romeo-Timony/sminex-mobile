@@ -35,6 +35,9 @@ MANIFEST_PATH = PROJECT_ROOT / "tests" / "review" / "manifest.json"
 MANIFEST_LOCK = Lock()
 APPIUM_SERVER = os.environ.get("APPIUM_SERVER", "http://127.0.0.1:4723")
 APPIUM_START_TIMEOUT_SECONDS = int(os.environ.get("APPIUM_START_TIMEOUT_SECONDS", "30"))
+AUTO_PIPELINE_ENABLED = os.environ.get("AUTO_PIPELINE_ENABLED", "true").strip().lower() not in {"0", "false", "no"}
+AUTO_PIPELINE_PUSH = os.environ.get("AUTO_PIPELINE_PUSH", "true").strip().lower() not in {"0", "false", "no"}
+AUTOMATION_RUN_DIR = PROJECT_ROOT / "run" / "automation"
 
 
 def project_files() -> list[str]:
@@ -153,6 +156,105 @@ def replace_review_task(jira_key: str) -> None:
             raise RuntimeError("Review manifest has an invalid format")
         manifest["files"] = [item for item in manifest["files"] if item.get("jira_key") != jira_key]
         MANIFEST_PATH.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def production_paths(files: list[dict]) -> list[Path]:
+    """Return the exact production paths produced by review promotion."""
+    result: list[Path] = []
+    for item in files:
+        source = Path(item["source_path"])
+        result.append(Path("tests") / source)
+    return result
+
+
+def write_auto_pipeline_batch(jira_key: str, files: list[dict]) -> Path:
+    """Create a self-contained Windows runner for one generated Jira task."""
+    AUTOMATION_RUN_DIR.mkdir(parents=True, exist_ok=True)
+    batch_path = AUTOMATION_RUN_DIR / f"{jira_key}_auto_pipeline.bat"
+    python_path = PROJECT_ROOT / ".venv" / "Scripts" / "python.exe"
+    git_paths = production_paths(files) + [Path("tests/review/manifest.json")]
+    git_add_lines = "\n".join(
+        f'git add -- "{path.as_posix()}"' for path in git_paths
+    )
+    push_line = "git push origin main" if AUTO_PIPELINE_PUSH else "echo [INFO] Git push disabled by AUTO_PIPELINE_PUSH."
+    content = f"""@echo off
+chcp 65001 >nul
+setlocal EnableExtensions DisableDelayedExpansion
+cd /d "{PROJECT_ROOT}"
+
+set "JIRA_KEY={jira_key}"
+set "PYTHON_EXE={python_path}"
+set "LOCK_DIR=.automation-pipeline.lock"
+
+echo [AUTOMATION] Waiting for the pipeline lock: %JIRA_KEY%
+:wait_for_lock
+2>nul mkdir "%LOCK_DIR%"
+if errorlevel 1 (
+    timeout /t 2 /nobreak >nul
+    goto wait_for_lock
+)
+
+for /f "delims=" %%B in ('git branch --show-current') do set "GIT_BRANCH=%%B"
+if /I not "%GIT_BRANCH%"=="main" (
+    echo [AUTOMATION] Refusing to push from branch "%GIT_BRANCH%". Expected "main".
+    set "PIPELINE_EXIT_CODE=3"
+    goto pipeline_failed
+)
+git diff --cached --quiet
+if not errorlevel 1 (
+    echo [AUTOMATION] Existing staged changes detected. Automatic commit is blocked.
+    set "PIPELINE_EXIT_CODE=3"
+    goto pipeline_failed
+)
+
+echo [AUTOMATION] Verifying and promoting %JIRA_KEY%...
+"%PYTHON_EXE%" "tools\\promote_review_tests.py" "%JIRA_KEY%" --verify --apply
+if errorlevel 1 goto pipeline_failed
+
+echo [AUTOMATION] Staging promoted files for %JIRA_KEY%...
+{git_add_lines}
+git diff --cached --quiet
+if not errorlevel 1 (
+    git commit -m "feat: promote %JIRA_KEY% generated automation tests"
+    if errorlevel 1 goto pipeline_failed
+)
+
+echo [AUTOMATION] Sending %JIRA_KEY% to GitHub...
+{push_line}
+if errorlevel 1 goto pipeline_failed
+
+echo [AUTOMATION] Pipeline completed successfully for %JIRA_KEY%.
+rmdir "%LOCK_DIR%" 2>nul
+exit /b 0
+
+:pipeline_failed
+if not defined PIPELINE_EXIT_CODE set "PIPELINE_EXIT_CODE=%ERRORLEVEL%"
+echo [AUTOMATION] Pipeline failed for %JIRA_KEY% with exit code %PIPELINE_EXIT_CODE%. Review files were not promoted after a failed verification.
+rmdir "%LOCK_DIR%" 2>nul
+exit /b %PIPELINE_EXIT_CODE%
+"""
+    batch_path.write_text(content, encoding="utf-8-sig")
+    return batch_path
+
+
+def start_auto_pipeline(jira_key: str, files: list[dict]) -> tuple[Path, Path, int]:
+    """Start the generated runner asynchronously and keep its output for diagnosis."""
+    batch_path = write_auto_pipeline_batch(jira_key, files)
+    log_path = AUTOMATION_RUN_DIR / f"{jira_key}_auto_pipeline.log"
+    log_handle = log_path.open("ab")
+    creationflags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+    try:
+        process = subprocess.Popen(
+            ["cmd.exe", "/d", "/c", str(batch_path)],
+            cwd=PROJECT_ROOT,
+            stdin=subprocess.DEVNULL,
+            stdout=log_handle,
+            stderr=subprocess.STDOUT,
+            creationflags=creationflags,
+        )
+    finally:
+        log_handle.close()
+    return batch_path, log_path, process.pid
 
 
 def appium_is_ready() -> bool:
@@ -378,7 +480,16 @@ class Handler(BaseHTTPRequestHandler):
                     path.parent.mkdir(parents=True, exist_ok=True)
                     path.write_text(item["content"], encoding="utf-8")
                 update_manifest(jira_key, validated, model_result["test_case_mapping"])
-                self.respond(HTTPStatus.OK, {"status": "applied", "jira_key": jira_key, "appium_ready": uses_appium, "replaced_review": replace_review, "changed_files": [item["path"] for item in validated], "manifest": str(MANIFEST_PATH.relative_to(PROJECT_ROOT)), "test_case_mapping": model_result["test_case_mapping"], "warnings": model_result["warnings"]})
+                pipeline: dict[str, object] = {"started": False}
+                if AUTO_PIPELINE_ENABLED:
+                    batch_path, log_path, process_id = start_auto_pipeline(jira_key, validated)
+                    pipeline = {
+                        "started": True,
+                        "batch": str(batch_path.relative_to(PROJECT_ROOT)),
+                        "log": str(log_path.relative_to(PROJECT_ROOT)),
+                        "process_id": process_id,
+                    }
+                self.respond(HTTPStatus.OK, {"status": "applied", "jira_key": jira_key, "appium_ready": uses_appium, "replaced_review": replace_review, "changed_files": [item["path"] for item in validated], "manifest": str(MANIFEST_PATH.relative_to(PROJECT_ROOT)), "automation_pipeline": pipeline, "test_case_mapping": model_result["test_case_mapping"], "warnings": model_result["warnings"]})
             else:
                 self.respond(HTTPStatus.OK, {"status": "preview", "jira_key": jira_key, "appium_ready": uses_appium, "changes": validated, "test_case_mapping": model_result["test_case_mapping"], "warnings": model_result["warnings"]})
         except (ValueError, KeyError, json.JSONDecodeError) as error:
